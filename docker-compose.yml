@@ -1,0 +1,46 @@
+version: '3.7'
+
+services:
+
+  feinstaub_web:
+    build: web
+    container_name: feinstaub_web
+    ports:
+      - '5000:5000'
+    environment:
+      - FLASK_DEBUG=1
+      - APP_SETTINGS=project.server.config.DevelopmentConfig
+    depends_on:
+      - feinstaub_redis
+      - feinstaub_worker
+
+  feinstaub_db:
+    image: influxdb
+    #build: db
+    container_name: feinstaub_db
+    ports:
+      # The API for InfluxDB is served on port 8086
+      - "8086:8086"
+      - "8082:8082"
+      # UDP Port
+      - "8089:8089"
+
+  feinstaub_redis:
+    ports:
+      - '6379:6379'
+    #image: redis:4.0.11-alpine
+    image: redislabs/rejson:latest
+    networks:
+      internal:
+        aliases:
+          - redis_database
+
+  feinstaub_worker:
+    build: worker
+    depends_on:
+      - feinstaub_redis
+    networks:
+      internal:
+        
+networks:
+  internal:
